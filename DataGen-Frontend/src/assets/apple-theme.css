@@ -1,0 +1,450 @@
+<style scoped>
+/* Apple Design System & Layout Constraints */
+/* 1. Ensure the container uses the full width of the screen */
+.page-container.wide-container {
+  max-width: 98%;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 2. Side-by-Side Split: 40% Config | 60% Logs */
+.split-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.left-panel {
+  flex: 0 0 40%; /* Fixed 40% width */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.right-panel {
+  flex: 1; /* Takes the remaining 60% */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0; /* Prevents long text from pushing the panel wider than 60% */
+}
+
+/* 3. The "Black Box" Consoles */
+.console-body {
+  height: 400px;        /* Fixed height for both boxes */
+  width: 100%;
+  background-color: #000;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;   /* No horizontal scrolling! */
+  
+  /* Text Wrapping Fixes */
+  white-space: pre-wrap;       /* Respect line breaks but wrap at the edge */
+  word-wrap: break-word;       /* Break long UUIDs or URL strings */
+  overflow-wrap: break-word;
+  
+  /* Typography */
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #00ff41; /* Hacker Green for logs */
+}
+
+/* 4. Sleek Scrollbar */
+.console-body::-webkit-scrollbar {
+  width: 6px;
+}
+.console-body::-webkit-scrollbar-thumb {
+  background: #3a3a3c;
+  border-radius: 10px;
+}
+
+.page-container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1d1d1f;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #0071e3;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0;
+  transition: opacity 0.3s ease;
+}
+.back-btn:hover {
+  opacity: 0.7;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.engine-id-badge {
+  font-size: 14px;
+  background: #e8e8ed;
+  color: #86868b;
+  padding: 4px 10px;
+  border-radius: 980px;
+  font-weight: 500;
+}
+
+.engine-controls {
+  display: flex;
+  gap: 12px;
+}
+
+/* Base Apple Button styling for pills */
+.apple-btn {
+  border-radius: 980px;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.apple-btn-primary { background: #0071e3; color: white; }
+.apple-btn-primary:hover { background: #005bb5; }
+.apple-btn-secondary { background: #e8e8ed; color: #1d1d1f; }
+.apple-btn-secondary:hover { background: #d2d2d7; }
+.apple-btn-success { background: #34c759; color: white; }
+.apple-btn-success:hover { background: #2da94f; }
+.apple-btn-danger { background: #ff3b30; color: white; }
+.apple-btn-danger:hover { background: #d73127; }
+
+/* Split Layout */
+.split-layout {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.left-panel {
+  flex: 0 0 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.right-panel {
+  flex: 1;
+  min-width: 0; /* Critical for flex items to prevent overflow */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Cards & Forms */
+.apple-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+.section-heading {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f5f5f7;
+  padding-bottom: 12px;
+}
+
+.toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.apple-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+.form-row .form-group {
+  flex: 1;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.374px;
+}
+
+.apple-input {
+  background: #f5f5f7;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 15px;
+  color: #1d1d1f;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+.apple-input:focus {
+  border-color: #0071e3;
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Table Styling */
+.apple-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.apple-table th {
+  text-align: left;
+  padding: 10px;
+  color: #86868b;
+  font-weight: 500;
+  border-bottom: 1px solid #e8e8ed;
+}
+.apple-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f5f5f7;
+}
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #1d1d1f;
+  font-size: 13px;
+}
+.badge {
+  background: #f5f5f7;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #515154;
+}
+
+.table-actions {
+  display: flex;
+  gap: 10px;
+}
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  transition: color 0.3s ease;
+  padding: 0;
+}
+.edit-color { color: #0071e3; }
+.edit-color:hover { color: #005bb5; }
+.delete-color { color: #86868b; }
+.delete-color:hover { color: #ff3b30; }
+
+.empty-state { text-align: center; padding: 30px; color: #86868b; font-size: 14px; }
+
+/* Console Wrappers */
+.console-wrapper {
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Split available height evenly */
+}
+
+.console-header {
+  width: 100%;
+  background: #2c2c2e;
+  padding: 8px 16px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+  margin-right: 16px;
+}
+
+.status-dot { width: 12px; height: 12px; background: #ff5f56; border-radius: 50%; }
+.status-dot.yellow { background: #ffbd2e; }
+.status-dot.green { background: #27c93f; }
+.status-dot.pulsing {
+  background: #34c759;
+  box-shadow: 0 0 8px #34c759;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+}
+
+.console-header h3 {
+  color: #86868b;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.console-body {
+  height: 380px;      /* Fixed height */
+  width: 100%;        /* Lock to container width */
+  overflow-y: auto;   /* Vertical scroll only */
+  overflow-x: hidden; /* Kill horizontal scroll */
+  
+  /* Text Wrapping Logic */
+  white-space: pre-wrap;       /* Respect \n but wrap at the edge */
+  word-wrap: break-word;       /* Break long words (UUIDs/URLs) */
+  overflow-wrap: break-word;
+  
+  background-color: #000;
+  color: #00ff41;              /* Classic hacker green or white */
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 16px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.console-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.console-body::-webkit-scrollbar-track {
+  background: #000;
+  border-radius: 0 0 12px 0;
+}
+
+.console-body::-webkit-scrollbar-thumb {
+  background: #3a3a3c;
+  border-radius: 10px;
+}
+
+.console-body::-webkit-scrollbar-thumb:hover {
+  background: #48484a;
+}
+
+.console-body pre {
+  margin: 0 0 10px 0;
+  color: #a5d6ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.placeholder-text {
+  color: #444 !important;
+  font-style: italic;
+}
+
+/* Animations */
+.slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.engine-buttons { display: flex; gap: 8px; }
+.small-btn { padding: 6px 12px; font-size: 13px; }
+.node-link { color: var(--apple-link); text-decoration: none; font-weight: 500; font-size: 14px; }
+.node-link:hover { color: var(--apple-blue); }
+.action-text-btn { background: none; border: none; font-size: 14px; font-weight: 500; cursor: pointer; }
+.edit-color { color: var(--apple-link); }
+.edit-color:hover { color: var(--apple-blue); }
+.delete-color { color: #86868b; }
+.delete-color:hover { color: #ff3b30; }
+
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+.modal-content { width: 100%; max-width: 500px; padding: 30px; }
+.apple-btn-secondary { background-color: #e5e5ea; color: #1d1d1f; padding: 12px 24px; border-radius: 980px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
+.apple-btn-secondary:hover { background-color: #d1d1d6; }
+
+.hero-section {
+  min-height: calc(100vh - 48px);
+  background-color: var(--apple-black);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+.hero-content {
+  max-width: 800px;
+}
+h1 {
+  color: white;
+  font-size: 72px;
+  line-height: 1.07;
+  margin-bottom: 20px;
+}
+p {
+  color: #86868b;
+  font-size: 21px;
+  margin-bottom: 40px;
+}
+.hero-btn {
+  background-color: white;
+  color: black;
+  padding: 12px 24px;
+  border-radius: 980px;
+  font-weight: 500;
+  font-size: 15px;
+}
+.hero-btn:hover { background-color: #e5e5ea; }
+</style>

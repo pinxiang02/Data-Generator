@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sqlalchemy
+pg8000
+pydantic
+paho-mqtt
+requests
+httpx
