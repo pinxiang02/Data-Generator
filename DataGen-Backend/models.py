@@ -46,6 +46,8 @@ class MQTT(Base):
     __tablename__ = "mqtt_configs"
     MQTTid = Column(Integer, primary_key=True, index=True)
     MQTTName = Column(String, nullable=False)
+    Host = Column(String, nullable=False, default="localhost") # <-- NEW
+    Port = Column(Integer, nullable=False, default=1883)       # <-- NEW
     Topic = Column(String, nullable=False)
     DatetimeCreated = Column(DateTime, default=datetime.utcnow)
     DatetimeUpdated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

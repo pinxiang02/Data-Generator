@@ -41,6 +41,15 @@
               <span>Enable Message Broker (MQTT/NATS)</span>
             </label>
             
+            <div v-if="generator.is_message_broker_enabled" style="margin-left: 28px; margin-top: 4px; margin-bottom: 8px;">
+              <select v-model="selectedMqttId" class="apple-input" style="padding: 6px 10px; font-size: 13px; width: 100%; max-width: 250px;">
+                <option :value="null">-- Select MQTT Broker --</option>
+                <option v-for="mqttItem in availableMqtts" :key="mqttItem.MQTTid" :value="mqttItem.MQTTid">
+                  {{ mqttItem.MQTTName }}
+                </option>
+              </select>
+            </div>
+            
           </div>
         </div>
 
@@ -178,6 +187,9 @@ const isApiEnabled = ref(false);
 const availableApis = ref([]);
 const selectedApiId = ref(null);
 
+const availableMqtts = ref([]);
+const selectedMqttId = ref(null);
+
 const route = useRoute();
 const id = route.params.id;
 
@@ -188,6 +200,7 @@ const liveResponses = ref([]);
 
 const form = ref({ node_name: '', data_type_enum: 'String', generation_mode: 'Fixed' });
 const payloadConsole = ref(null);
+const responseConsole = ref(null);
 let pollingTimer = null;
 let lastTimestamp = 0;
 
@@ -206,16 +219,24 @@ const startPolling = () => {
         // Update Payload Console
         livePayloads.value.push(JSON.stringify(res.data.data, null, 2));
         
-        // --- NEW: Update API Response Console ---
-        // Inside startPolling
+        let addedLog = false;
+
+        // Catch API Logs
         if (res.data.api_log) {
-            // If the response is a status code + message, it will now wrap to the next line
-            liveResponses.value.push(res.data.api_log);
-            
+            liveResponses.value.push(`[API] ${res.data.api_log}`);
+            addedLog = true;
+        }
+        
+        // Catch MQTT Logs (NEW)
+        if (res.data.mqtt_log) {
+            liveResponses.value.push(`[MQTT] ${res.data.mqtt_log}`);
+            addedLog = true;
+        }
+        
+        if (addedLog) {
             if (liveResponses.value.length > 50) liveResponses.value.shift();
-            
-            // Smooth scroll logic remains the same
             nextTick(() => {
+                // Ensure you have a ref="responseConsole" on this div in your template
                 if (responseConsole.value) {
                     responseConsole.value.scrollTop = responseConsole.value.scrollHeight;
                 }
@@ -236,13 +257,13 @@ const loadData = async () => {
 
 const startEngine = async () => {
   try {
-    // 1. Grab the selected ID ONLY if the toggle is checked
-    const idToSend = generator.value.is_api_enabled ? selectedApiId.value : null;
+    const apiIdToSend = generator.value.is_api_enabled ? selectedApiId.value : null;
+    const mqttIdToSend = generator.value.is_message_broker_enabled ? selectedMqttId.value : null;
 
-    // 2. Send both the generator ID and the target API ID to the backend
-    await api.startEngine(id, idToSend);
+    // Send both IDs to the backend
+    await api.startEngine(id, apiIdToSend, mqttIdToSend);
     
-    livePayloads.value.push(`// Engine start signal sent (Target API: ${idToSend || 'None'})...`);
+    livePayloads.value.push(`// Engine start signal sent (API: ${apiIdToSend || 'None'} | MQTT: ${mqttIdToSend || 'None'})...`);
     scrollToBottom();
   } catch (e) {
     const errorMsg = e.response?.data?.detail || e.message;
@@ -270,7 +291,73 @@ const loadApis = async () => {
   }
 };
 
-onMounted(() => { loadData(); startPolling(); loadApis();});
+const loadMqtts = async () => {
+  try {
+    const res = await api.getMqtts(); 
+    availableMqtts.value = res.data;
+  } catch (error) {
+    console.warn("Failed to load MQTTs", error);
+  }
+};
+
+// --- NODE MANAGEMENT FUNCTIONS ---
+
+const submitNode = async () => {
+  try {
+    if (isEditingNode.value) {
+      // If editing, update the existing node
+      await api.updateNode(form.value.id, form.value);
+    } else {
+      // If creating, add a new node to this generator
+      await api.createNode(id, form.value);
+    }
+    
+    // Reset form and refresh table
+    form.value = { node_name: '', data_type_enum: 'String', generation_mode: 'Fixed' };
+    isEditingNode.value = false;
+    await loadData();
+  } catch (error) {
+    console.error("Failed to save node:", error);
+    alert("Error saving node. Check console for details.");
+  }
+};
+
+const editNode = (node) => {
+  isEditingNode.value = true;
+  // Clone the node data into the form so we don't directly mutate the table state
+  form.value = { ...node }; 
+};
+
+const cancelEdit = () => {
+  isEditingNode.value = false;
+  form.value = { node_name: '', data_type_enum: 'String', generation_mode: 'Fixed' };
+};
+
+const removeNode = async (nodeId) => {
+  if (!confirm("Are you sure you want to delete this node?")) return;
+  
+  try {
+    await api.deleteNode(nodeId);
+    await loadData(); // Refresh the table
+  } catch (error) {
+    console.error("Failed to delete node:", error);
+  }
+};
+
+// --- SETTINGS MANAGEMENT ---
+
+const updateSettings = async () => {
+  try {
+    await api.updateGenerator(id, {
+      is_api_enabled: generator.value.is_api_enabled,
+      is_message_broker_enabled: generator.value.is_message_broker_enabled
+    });
+  } catch (error) {
+    console.error("Failed to update generator settings:", error);
+  }
+};
+
+onMounted(() => { loadData(); startPolling(); loadApis(); loadMqtts();});
 onUnmounted(() => clearInterval(pollingTimer));
 </script>
 

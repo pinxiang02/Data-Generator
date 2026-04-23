@@ -18,10 +18,13 @@ class APICreate(BaseModel):
 
 class MQTTCreate(BaseModel):
     MQTTName: str
+    Host: str = "localhost" # <-- NEW
+    Port: int = 1883        # <-- NEW
     Topic: str
 
 class EngineStartPayload(BaseModel):
     target_api_id: Optional[int] = None
+    target_mqtt_id: Optional[int] = None
 
 # Auto-create tables in Postgres
 models.Base.metadata.create_all(bind=database.engine)
@@ -75,18 +78,17 @@ def delete_generator(generator_id: int, db: Session = Depends(database.get_db)):
 async def start_generator_endpoint(
     generator_id: int, 
     payload: EngineStartPayload,
-    db: Session = Depends(database.get_db) # Added DB dependency
+    db: Session = Depends(database.get_db)
 ):
     api_config_dict = None
+    mqtt_config_dict = None
     
-    # 1. Retrieve the full API details from the database ONCE
+    # --- 1. Process API Configuration ---
     if payload.target_api_id:
         api_record = db.query(models.API).filter(models.API.APIid == payload.target_api_id).first()
-        
         if not api_record:
             raise HTTPException(status_code=404, detail="Selected API Target not found.")
             
-        # 2. Store details in a dictionary format suitable for the engine
         headers = {}
         if api_record.HeaderName and api_record.HeaderValue:
             headers[api_record.HeaderName] = api_record.HeaderValue
@@ -98,13 +100,39 @@ async def start_generator_endpoint(
             "headers": headers
         }
 
-    # 3. Pass the compiled dictionary to the engine
-    success = engine.start_generator(generator_id, api_config_dict)
+    # --- 2. Process MQTT Configuration (NEW) ---
+    if payload.target_mqtt_id:
+        mqtt_record = db.query(models.MQTT).filter(models.MQTT.MQTTid == payload.target_mqtt_id).first()
+        if not mqtt_record:
+            raise HTTPException(status_code=404, detail="Selected MQTT Broker not found.")
+            
+        mqtt_config_dict = {
+            "id": mqtt_record.MQTTid,
+            "host": mqtt_record.Host,
+            "port": mqtt_record.Port,
+            "topic": mqtt_record.Topic
+        }
+
+    # --- 3. Pass both compiled dictionaries to the engine ---
+    # Ensure your start_generator function in engine.py is updated to accept both!
+    success = engine.start_generator(
+        generator_id, 
+        api_config=api_config_dict, 
+        mqtt_config=mqtt_config_dict
+    )
     
     if not success:
         raise HTTPException(status_code=400, detail="Already running")
-        
-    return {"status": "started", "mode": "API Destination" if api_config_dict else "Local Display Only"}
+    
+    # --- 4. Detailed Response Message ---
+    modes = []
+    if api_config_dict: modes.append("API")
+    if mqtt_config_dict: modes.append("MQTT")
+    
+    return {
+        "status": "started", 
+        "active_destinations": modes if modes else ["Local Display Only"]
+    }
 
 @app.post("/generators/{generator_id}/stop")
 async def stop_engine(generator_id: int): # <--- ADD 'async' HERE

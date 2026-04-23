@@ -1,0 +1,7 @@
+FROM python:3.9-slim
+RUN pip install paho-mqtt
+# Force python to output logs immediately
+ENV PYTHONUNBUFFERED=1 
+WORKDIR /app
+COPY subscriber.py .
+CMD ["python", "subscriber.py"]

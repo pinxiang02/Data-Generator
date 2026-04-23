@@ -26,9 +26,10 @@ export default {
   createNode(generatorId, data) { return apiClient.post(`/generators/${generatorId}/nodes/`, data); },
   deleteNode(generatorId, nodeId) { return apiClient.delete(`/generators/${generatorId}/nodes/${nodeId}`); },
 
-  startEngine(id, targetApiId = null) {
+  startEngine(id, targetApiId = null, targetMqttId = null) {
     return apiClient.post(`/generators/${id}/start`, {
-      target_api_id: targetApiId
+      target_api_id: targetApiId,
+      target_mqtt_id: targetMqttId
     });
   },
   stopEngine(id) {

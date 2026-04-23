@@ -6,3 +6,4 @@ pydantic
 paho-mqtt
 requests
 httpx
+aiomqtt

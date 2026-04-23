@@ -25,6 +25,7 @@
             <td class="font-mono"><span class="badge">{{ mqtt.Topic }}</span></td>
             <td>
               <div class="table-actions" style="justify-content: flex-end;">
+                <button @click="editMqtt(mqtt)" class="action-btn edit-color">Edit</button>
                 <button @click="deleteMqtt(mqtt.MQTTid)" class="action-btn delete-color">Delete</button>
               </div>
             </td>
@@ -43,6 +44,18 @@
             <label>Broker Connection Name</label>
             <input v-model="form.MQTTName" type="text" class="apple-input" placeholder="e.g., NATS Jetstream Factory A">
           </div>
+          
+          <div class="form-row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group" style="flex: 2;">
+              <label>Host / IP</label>
+              <input v-model="form.Host" type="text" class="apple-input" placeholder="localhost">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Port</label>
+              <input v-model="form.Port" type="number" class="apple-input" placeholder="1884">
+            </div>
+          </div>
+          
           <div class="form-group">
             <label>Topic / Subject</label>
             <input v-model="form.Topic" type="text" class="apple-input" placeholder="telemetry.factory.line1">
@@ -64,8 +77,13 @@ import api from '../services/api';
 const mqtts = ref([]);
 const showModal = ref(false);
 
+const isEditing = ref(false);
+const editId = ref(null);
+
 const form = ref({
   MQTTName: '',
+  Host: 'localhost',
+  Port: 1884,
   Topic: ''
 });
 
@@ -79,18 +97,39 @@ const loadMqtts = async () => {
 };
 
 const submitMqtt = async () => {
-  if (!form.value.MQTTName || !form.value.Topic) {
-    alert("Broker Name and Topic are required.");
+  if (!form.value.MQTTName || !form.value.Topic || !form.value.Host || !form.value.Port) {
+    alert("All fields are required.");
     return;
   }
+  
   try {
-    await api.createMqtt(form.value);
-    showModal.value = false;
-    form.value = { MQTTName: '', Topic: '' };
+    if (isEditing.value) {
+      // If editing, send an update request to the backend
+      await api.updateMqtt(editId.value, form.value);
+    } else {
+      // If not editing, create a new one
+      await api.createMqtt(form.value);
+    }
+    
+    closeModal();
     loadMqtts();
   } catch (error) {
-    console.error("Failed to create MQTT config:", error);
+    console.error("Failed to save MQTT config:", error);
   }
+};
+
+const editMqtt = (mqtt) => {
+  isEditing.value = true;
+  editId.value = mqtt.MQTTid;
+  
+  // Clone the data so typing doesn't instantly change the table text
+  form.value = { 
+    MQTTName: mqtt.MQTTName, 
+    Host: mqtt.Host, 
+    Port: mqtt.Port, 
+    Topic: mqtt.Topic 
+  };
+  showModal.value = true;
 };
 
 const deleteMqtt = async (id) => {
@@ -102,6 +141,13 @@ const deleteMqtt = async (id) => {
       console.error("Failed to delete MQTT config:", error);
     }
   }
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  isEditing.value = false;
+  editId.value = null;
+  form.value = { MQTTName: '', Host: '127.0.0.1', Port: 1884, Topic: '' };
 };
 
 onMounted(loadMqtts);

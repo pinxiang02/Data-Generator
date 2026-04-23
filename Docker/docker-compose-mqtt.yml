@@ -1,0 +1,20 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt_broker
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: always
+
+  mqtt-subscriber:
+    build:
+      context: ../DataGen-MQTT  # Points to your sibling folder
+      dockerfile: Dockerfile.subscriber
+    container_name: mqtt_subscriber
+    depends_on:
+      - mosquitto
+    restart: always
