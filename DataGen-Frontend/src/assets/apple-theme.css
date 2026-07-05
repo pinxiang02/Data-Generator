@@ -1,4 +1,3 @@
-<style scoped>
 /* Apple Design System & Layout Constraints */
 /* 1. Ensure the container uses the full width of the screen */
 .page-container.wide-container {
@@ -30,7 +29,7 @@
   min-width: 0; /* Prevents long text from pushing the panel wider than 60% */
 }
 
-/* 3. The "Black Box" Consoles */
+/* 3. The "Black Box" Consoles (intentionally dark in both themes) */
 .console-body {
   height: 400px;        /* Fixed height for both boxes */
   width: 100%;
@@ -38,12 +37,12 @@
   padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;   /* No horizontal scrolling! */
-  
+
   /* Text Wrapping Fixes */
   white-space: pre-wrap;       /* Respect line breaks but wrap at the edge */
   word-wrap: break-word;       /* Break long UUIDs or URL strings */
   overflow-wrap: break-word;
-  
+
   /* Typography */
   font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
   font-size: 13px;
@@ -62,7 +61,7 @@
 
 .page-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #1d1d1f;
+  color: var(--text);
   max-width: 1400px;
   margin: 0 auto;
   padding: 40px 20px;
@@ -71,7 +70,7 @@
 .back-btn {
   background: none;
   border: none;
-  color: #0071e3;
+  color: var(--link);
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -103,8 +102,8 @@
 
 .engine-id-badge {
   font-size: 14px;
-  background: #e8e8ed;
-  color: #86868b;
+  background: var(--surface-3);
+  color: var(--text-secondary);
   padding: 4px 10px;
   border-radius: 980px;
   font-weight: 500;
@@ -126,14 +125,14 @@
   transition: all 0.3s ease;
 }
 
-.apple-btn-primary { background: #0071e3; color: white; }
-.apple-btn-primary:hover { background: #005bb5; }
-.apple-btn-secondary { background: #e8e8ed; color: #1d1d1f; }
-.apple-btn-secondary:hover { background: #d2d2d7; }
-.apple-btn-success { background: #34c759; color: white; }
-.apple-btn-success:hover { background: #2da94f; }
-.apple-btn-danger { background: #ff3b30; color: white; }
-.apple-btn-danger:hover { background: #d73127; }
+.apple-btn-primary { background: var(--accent); color: white; }
+.apple-btn-primary:hover { background: var(--accent-hover); }
+.apple-btn-secondary { background: var(--surface-3); color: var(--text); }
+.apple-btn-secondary:hover { filter: brightness(0.95); }
+.apple-btn-success { background: var(--success); color: white; }
+.apple-btn-success:hover { filter: brightness(0.94); }
+.apple-btn-danger { background: var(--danger); color: white; }
+.apple-btn-danger:hover { filter: brightness(0.92); }
 
 /* Split Layout */
 .split-layout {
@@ -159,10 +158,12 @@
 
 /* Cards & Forms */
 .apple-card {
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-subtle);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .section-heading {
@@ -171,8 +172,9 @@
   letter-spacing: -0.28px;
   margin-top: 0;
   margin-bottom: 20px;
-  border-bottom: 1px solid #f5f5f7;
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 12px;
+  color: var(--text);
 }
 
 .toggle-group {
@@ -186,7 +188,7 @@
   align-items: center;
   gap: 10px;
   font-size: 15px;
-  color: #1d1d1f;
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -208,25 +210,30 @@
 label {
   font-size: 13px;
   font-weight: 500;
-  color: #86868b;
+  color: var(--text-secondary);
   letter-spacing: -0.374px;
 }
 
 .apple-input {
-  background: #f5f5f7;
+  background: var(--surface-2);
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 12px;
   font-size: 15px;
-  color: #1d1d1f;
+  color: var(--text);
   transition: all 0.3s ease;
   font-family: inherit;
 }
 .apple-input:focus {
-  border-color: #0071e3;
+  border-color: var(--accent);
   outline: none;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+/* Native select dropdowns should follow the theme too */
+select.apple-input option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 .form-actions {
@@ -245,47 +252,54 @@ label {
 .apple-table th {
   text-align: left;
   padding: 10px;
-  color: #86868b;
+  color: var(--text-secondary);
   font-weight: 500;
-  border-bottom: 1px solid #e8e8ed;
+  border-bottom: 1px solid var(--border);
 }
 .apple-table td {
   padding: 12px 10px;
-  border-bottom: 1px solid #f5f5f7;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text);
 }
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  color: #1d1d1f;
+  color: var(--text);
   font-size: 13px;
 }
 .badge {
-  background: #f5f5f7;
+  display: inline-block;
+  background: var(--surface-2);
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
-  color: #515154;
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .table-actions {
   display: flex;
-  gap: 10px;
+  gap: 6px;
 }
 .action-btn {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 13px;
-  transition: color 0.3s ease;
-  padding: 0;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: color 0.2s ease, background-color 0.2s ease;
 }
-.edit-color { color: #0071e3; }
-.edit-color:hover { color: #005bb5; }
-.delete-color { color: #86868b; }
-.delete-color:hover { color: #ff3b30; }
+.action-btn:hover { background-color: var(--surface-2); }
+.edit-color { color: var(--link); }
+.edit-color:hover { color: var(--accent-hover); }
+/* Neutral but clearly legible in both themes; turns red on hover to signal intent */
+.delete-color { color: var(--text-tertiary); }
+.delete-color:hover { color: var(--danger); background-color: var(--surface-2); }
 
-.empty-state { text-align: center; padding: 30px; color: #86868b; font-size: 14px; }
+.empty-state { text-align: center; padding: 30px; color: var(--text-secondary); font-size: 14px; }
 
-/* Console Wrappers */
+/* Console Wrappers (intentionally dark terminals in both themes) */
 .console-wrapper {
   background: #000000;
   border-radius: 12px;
@@ -342,12 +356,12 @@ label {
   width: 100%;        /* Lock to container width */
   overflow-y: auto;   /* Vertical scroll only */
   overflow-x: hidden; /* Kill horizontal scroll */
-  
+
   /* Text Wrapping Logic */
   white-space: pre-wrap;       /* Respect \n but wrap at the edge */
   word-wrap: break-word;       /* Break long words (UUIDs/URLs) */
   overflow-wrap: break-word;
-  
+
   background-color: #000;
   color: #00ff41;              /* Classic hacker green or white */
   font-family: 'SF Mono', 'Menlo', monospace;
@@ -402,22 +416,37 @@ label {
 
 .engine-buttons { display: flex; gap: 8px; }
 .small-btn { padding: 6px 12px; font-size: 13px; }
-.node-link { color: var(--apple-link); text-decoration: none; font-weight: 500; font-size: 14px; }
-.node-link:hover { color: var(--apple-blue); }
-.action-text-btn { background: none; border: none; font-size: 14px; font-weight: 500; cursor: pointer; }
-.edit-color { color: var(--apple-link); }
-.edit-color:hover { color: var(--apple-blue); }
-.delete-color { color: #86868b; }
-.delete-color:hover { color: #ff3b30; }
+.node-link { color: var(--link); text-decoration: none; font-weight: 500; font-size: 14px; }
+.node-link:hover { color: var(--accent-hover); }
+.action-text-btn { background: none; border: none; font-size: 14px; font-weight: 500; cursor: pointer; padding: 5px 10px; border-radius: 8px; transition: color 0.2s ease, background-color 0.2s ease; }
+.action-text-btn:hover { background-color: var(--surface-2); }
+.edit-color { color: var(--link); }
+.edit-color:hover { color: var(--accent-hover); }
+.delete-color { color: var(--text-tertiary); }
+.delete-color:hover { color: var(--danger); background-color: var(--surface-2); }
 
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.modal-content { width: 100%; max-width: 500px; padding: 30px; }
-.apple-btn-secondary { background-color: #e5e5ea; color: #1d1d1f; padding: 12px 24px; border-radius: 980px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
-.apple-btn-secondary:hover { background-color: #d1d1d6; }
+.modal-content { width: 100%; max-width: 500px; padding: 30px; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); }
+.modal-title { color: var(--text); }
+/* Footer button row: right-aligned with clear spacing between buttons */
+.modal-footer, .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+/* Keep footer buttons at their natural size — never shrink or wrap the label */
+.modal-footer button, .modal-actions button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.apple-btn-secondary { background-color: var(--surface-3); color: var(--text); padding: 12px 24px; border-radius: 980px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
+.apple-btn-secondary:hover { filter: brightness(0.95); }
 
 .hero-section {
   min-height: calc(100vh - 48px);
-  background-color: var(--apple-black);
+  background-color: var(--hero-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -433,7 +462,7 @@ h1 {
   line-height: 1.07;
   margin-bottom: 20px;
 }
-p {
+.hero-content p {
   color: #86868b;
   font-size: 21px;
   margin-bottom: 40px;
@@ -447,4 +476,3 @@ p {
   font-size: 15px;
 }
 .hero-btn:hover { background-color: #e5e5ea; }
-</style>

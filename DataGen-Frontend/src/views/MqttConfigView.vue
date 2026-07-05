@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <h1 class="page-title">Message Brokers</h1>
-      <button @click="showModal = true" class="apple-btn-primary">Add MQTT Config</button>
+      <button @click="openCreateModal" class="apple-btn-primary">Add MQTT Config</button>
     </div>
 
     <div class="apple-card" style="padding: 0; overflow: hidden;">
@@ -34,10 +34,10 @@
       </table>
     </div>
 
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content slide-down">
         <div class="modal-header">
-          <h2 class="modal-title">New Message Broker</h2>
+          <h2 class="modal-title">{{ isEditing ? 'Edit Message Broker' : 'New Message Broker' }}</h2>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -62,8 +62,8 @@
           </div>
         </div>
         <div class="modal-footer modal-actions">
-          <button @click="showModal = false" class="apple-btn apple-btn-secondary">Cancel</button>
-          <button @click="submitMqtt" class="apple-btn-primary">Save Broker</button>
+          <button @click="closeModal" class="apple-btn apple-btn-secondary">Cancel</button>
+          <button @click="submitMqtt" class="apple-btn-primary">{{ isEditing ? 'Save Changes' : 'Save Broker' }}</button>
         </div>
       </div>
     </div>
@@ -86,6 +86,13 @@ const form = ref({
   Port: 1884,
   Topic: ''
 });
+
+const openCreateModal = () => {
+  isEditing.value = false;
+  editId.value = null;
+  form.value = { MQTTName: '', Host: '127.0.0.1', Port: 1884, Topic: '' };
+  showModal.value = true;
+};
 
 const loadMqtts = async () => {
   try {

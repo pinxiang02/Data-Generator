@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+DataGen-Backend/datagen/
+DataGen-APIClient/API/
+Manual-Publisher/publisher/
+
+# Node / frontend build
+node_modules/
+DataGen-Frontend/dist/
+DataGen-Frontend/.output/
+DataGen-Frontend/.nuxt/
+
+# Editor / tooling
+.claude/
+.vscode/
+
+# Mosquitto runtime data & logs (broker state, not source)
+Docker/mosquitto/data/
+Docker/mosquitto/log/
+
+# OS
+.DS_Store
+Thumbs.db
