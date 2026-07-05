@@ -58,23 +58,20 @@
             <label>Database Type</label>
             <select v-model="form.DBType" class="apple-input">
               <option value="PostgreSQL">PostgreSQL</option>
-              <option value="Oracle">Oracle (coming soon)</option>
-              <option value="MongoDB">MongoDB (coming soon)</option>
+              <option value="MySQL">MySQL</option>
+              <option value="Oracle">Oracle</option>
+              <option value="MongoDB">MongoDB</option>
             </select>
-            <span v-if="form.DBType !== 'PostgreSQL'" class="field-warn">
-              Only PostgreSQL is supported right now — {{ form.DBType }} is reserved for a future release.
-            </span>
           </div>
 
           <div class="form-group">
             <label>Connection String</label>
-            <input v-model="form.ConnectionString" type="text" class="apple-input"
-                   placeholder="postgresql://user:password@host:5432/dbname">
+            <input v-model="form.ConnectionString" type="text" class="apple-input" :placeholder="connHint">
           </div>
 
           <div class="form-group">
-            <label>Target Table</label>
-            <input v-model="form.TableName" type="text" class="apple-input" placeholder="sensor_readings">
+            <label>{{ tableLabel }}</label>
+            <input v-model="form.TableName" type="text" class="apple-input" :placeholder="tablePlaceholder">
           </div>
 
           <div v-if="testResult" class="test-result-row">
@@ -107,11 +104,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../services/api';
 
 const router = useRouter();
+
+const CONN_HINTS = {
+  PostgreSQL: 'postgresql://user:password@host:5432/dbname',
+  MySQL: 'mysql://user:password@host:3306/dbname',
+  Oracle: 'oracle://user:password@host:1521/?service_name=FREEPDB1',
+  MongoDB: 'mongodb://user:password@host:27017/dbname?authSource=admin',
+};
+const connHint = computed(() => CONN_HINTS[form.value.DBType] || CONN_HINTS.PostgreSQL);
+const isMongo = computed(() => form.value.DBType === 'MongoDB');
+const tableLabel = computed(() => (isMongo.value ? 'Target Collection' : 'Target Table'));
+const tablePlaceholder = computed(() => (isMongo.value ? 'events' : 'sensor_readings'));
 const databases = ref([]);
 const showModal = ref(false);
 const isEditing = ref(false);

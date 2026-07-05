@@ -2,7 +2,6 @@ import httpx
 import json
 import asyncio
 import paho.mqtt.publish as mqtt_publish
-from sqlalchemy import text
 import dbutil
 
 async def send_to_api(api_config: dict, payload: dict) -> str:
@@ -66,45 +65,27 @@ async def publish_to_mqtt(mqtt_config: dict, payload: dict) -> str:
 
 
 async def insert_to_database(db_config: dict, payload: dict) -> str:
-    """Insert one payload row into the configured PostgreSQL table.
+    """Insert one payload row/document into the configured database.
 
-    db_config = {conn, table, columns: {name: {"type": pg_type}}}
-    Only payload keys that are real columns are inserted; each value is wrapped
-    in an explicit CAST to the column's type so strings can land in
-    uuid/timestamp/numeric columns without implicit-cast errors.
-    The table is never created or altered here (per requirements).
+    db_config = {db_type, conn, table, columns}. Works for PostgreSQL, MySQL,
+    Oracle (relational) and MongoDB (document). The blocking driver call runs in
+    a worker thread with a timeout so a slow/dead DB can't stall the generator.
+    The table/collection is never created or altered here (per requirements).
     """
     if not db_config:
         return ""
 
+    db_type = db_config.get("db_type", "PostgreSQL")
     conn = db_config["conn"]
     table = db_config["table"]
     columns = db_config.get("columns", {})
 
-    # Intersect generated fields with real table columns (skips @timestamp etc.)
-    items = [(k, v) for k, v in payload.items() if k in columns]
-    if not items:
-        return "[Error] DB Insert: no generated fields match the table columns"
-
-    col_sql = ", ".join(f'"{k}"' for k, _ in items)
-    val_sql = ", ".join(f'CAST(:{_param(i)} AS {columns[k]["type"]})' for i, (k, _) in enumerate(items))
-    params = {_param(i): v for i, (_, v) in enumerate(items)}
-    stmt = text(f'INSERT INTO "{table}" ({col_sql}) VALUES ({val_sql})')
-
     def _insert():
-        eng = dbutil.get_engine(conn)
-        with eng.begin() as c:
-            c.execute(stmt, params)
+        return dbutil.insert_row(db_type, conn, table, columns, payload)
 
     try:
-        await asyncio.wait_for(asyncio.to_thread(_insert), timeout=5.0)
-        return f"[Inserted] 1 row -> {table}"
+        return await asyncio.wait_for(asyncio.to_thread(_insert), timeout=5.0)
     except asyncio.TimeoutError:
         return "[Error] DB Insert: timed out"
     except Exception as e:
-        # Keep it to one line for the console
         return f"[Error] DB Insert: {str(e).splitlines()[0]}"
-
-
-def _param(i: int) -> str:
-    return f"p{i}"

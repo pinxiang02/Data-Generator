@@ -249,23 +249,24 @@ async def start_generator_endpoint(
         if not db_record:
             raise HTTPException(status_code=404, detail="Selected Database target not found.")
         if db_record.DBType not in dbutil.SUPPORTED_TYPES:
-            raise HTTPException(status_code=400, detail=f"{db_record.DBType} is not supported yet. Only PostgreSQL is available.")
+            raise HTTPException(status_code=400, detail=f"{db_record.DBType} is not supported.")
 
         try:
-            columns = dbutil.get_table_columns(db_record.ConnectionString, db_record.TableName)
+            columns = dbutil.get_table_columns(db_record.ConnectionString, db_record.DBType, db_record.TableName)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Could not connect to the database: {e}")
+            raise HTTPException(status_code=400, detail=f"Could not connect to the database: {str(e).splitlines()[0]}")
         if columns is None:
-            raise HTTPException(status_code=400, detail=f"Table '{db_record.TableName}' does not exist. Create it first — the app does not auto-create tables.")
+            raise HTTPException(status_code=400, detail=f"Table/collection '{db_record.TableName}' does not exist. Create it first — the app does not auto-create it.")
 
         nodes = db.query(models.Node).filter(models.Node.generator_id == generator_id).all()
         node_defs = [(n.node_name, n.data_type_enum) for n in nodes]
-        ok, err = dbutil.validate_alignment(node_defs, columns)
+        ok, err = dbutil.validate_alignment(node_defs, columns, db_record.DBType)
         if not ok:
             raise HTTPException(status_code=400, detail=err)
 
         db_config_dict = {
             "id": db_record.DBid,
+            "db_type": db_record.DBType,
             "conn": db_record.ConnectionString,
             "table": db_record.TableName,
             "columns": columns,
@@ -583,32 +584,59 @@ def database_schema(
     if not rec:
         raise HTTPException(status_code=404, detail="Database config not found")
     if rec.DBType not in dbutil.SUPPORTED_TYPES:
-        raise HTTPException(status_code=400, detail=f"{rec.DBType} is not supported yet.")
+        raise HTTPException(status_code=400, detail=f"{rec.DBType} is not supported.")
     try:
-        columns = dbutil.get_table_columns(rec.ConnectionString, rec.TableName)
+        columns = dbutil.get_table_columns(rec.ConnectionString, rec.DBType, rec.TableName)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not connect: {e}")
+        raise HTTPException(status_code=400, detail=f"Could not connect: {str(e).splitlines()[0]}")
     if columns is None:
-        raise HTTPException(status_code=400, detail=f"Table '{rec.TableName}' does not exist.")
+        raise HTTPException(status_code=400, detail=f"Table/collection '{rec.TableName}' does not exist.")
     return {"table": rec.TableName, "columns": columns}
 
 
-# Map a Postgres column type to a sensible generator node definition.
-def _pg_type_to_node(col_name: str, pg_type: str) -> dict:
-    t = pg_type.lower()
+# Map a column (category + size metadata) to a sensible generator node,
+# keeping generated values within the column's capacity so inserts succeed.
+def _category_to_node(col_name: str, meta: dict) -> dict:
+    cat = meta.get("category", "str")
+    type_str = str(meta.get("type", "")).lower()
+    precision = meta.get("precision")
+    scale = meta.get("scale")
+    length = meta.get("length")
     node = {"node_name": col_name}
-    if t in ("integer", "bigint", "smallint"):
-        node.update(data_type_enum="Integer", generation_mode="Random", min_range=0, max_range=1000)
-    elif t in ("numeric", "decimal", "real", "double precision"):
-        node.update(data_type_enum="Float", generation_mode="Random", min_range=0, max_range=100)
-    elif t == "boolean":
+
+    def int_cap():
+        # Respect small integer column widths so values never overflow.
+        if "tinyint(1)" in type_str or type_str == "boolean" or type_str == "bit":
+            return 1
+        if "tinyint" in type_str:
+            return 127
+        if "smallint" in type_str:
+            return 30000
+        if precision:  # NUMBER(p) / NUMERIC(p,0)
+            return min(1000, 10 ** int(precision) - 1)
+        return 1000
+
+    if cat == "bool":
         node.update(data_type_enum="Boolean", generation_mode="Random")
-    elif t == "uuid":
+    elif cat == "int":
+        node.update(data_type_enum="Integer", generation_mode="Random", min_range=0, max_range=int_cap())
+    elif cat == "float":
+        # A fixed-scale-0 numeric behaves like an integer; keep it whole to avoid rounding overflow.
+        if scale == 0:
+            node.update(data_type_enum="Integer", generation_mode="Random", min_range=0, max_range=int_cap())
+        else:
+            hi = 100
+            if precision is not None and scale is not None:
+                intdigits = max(1, int(precision) - int(scale))
+                hi = min(hi, 10 ** intdigits - 1)
+            node.update(data_type_enum="Float", generation_mode="Random", min_range=0, max_range=hi)
+    elif cat == "uuid" or "uuid" in type_str:
         node.update(data_type_enum="String", generation_mode="UUID")
-    elif t.startswith("timestamp") or t == "date" or t.startswith("time"):
+    elif cat == "datetime":
         node.update(data_type_enum="String", generation_mode="Timestamp")
-    else:  # character varying, text, char, json, etc.
-        node.update(data_type_enum="String", generation_mode="Random", min_range=1, max_range=10)
+    else:
+        maxlen = min(10, int(length)) if length else 10
+        node.update(data_type_enum="String", generation_mode="Random", min_range=1, max_range=maxlen)
     return node
 
 
@@ -625,14 +653,16 @@ def generate_generator_from_schema(
     if not rec:
         raise HTTPException(status_code=404, detail="Database config not found")
     if rec.DBType not in dbutil.SUPPORTED_TYPES:
-        raise HTTPException(status_code=400, detail=f"{rec.DBType} is not supported yet.")
+        raise HTTPException(status_code=400, detail=f"{rec.DBType} is not supported.")
 
     try:
-        columns = dbutil.get_table_columns(rec.ConnectionString, rec.TableName)
+        columns = dbutil.get_table_columns(rec.ConnectionString, rec.DBType, rec.TableName)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not connect: {e}")
+        raise HTTPException(status_code=400, detail=f"Could not connect: {str(e).splitlines()[0]}")
     if columns is None:
-        raise HTTPException(status_code=400, detail=f"Table '{rec.TableName}' does not exist.")
+        raise HTTPException(status_code=400, detail=f"Table/collection '{rec.TableName}' does not exist.")
+    if not columns:
+        raise HTTPException(status_code=400, detail="Collection is empty — cannot infer a schema. Insert a sample document first, or add nodes manually.")
 
     # Create the generator, pre-wired to this database destination.
     gen = models.Generator(
@@ -646,12 +676,12 @@ def generate_generator_from_schema(
     db.commit()
     db.refresh(gen)
 
-    # One node per column, skipping auto-generated columns (serial / identity).
+    # One node per column, skipping auto-generated columns (serial / identity / _id).
     created = 0
     for col_name, meta in columns.items():
         if meta["auto"]:
             continue
-        node_data = _pg_type_to_node(col_name, meta["type"])
+        node_data = _category_to_node(col_name, meta)
         db.add(models.Node(generator_id=gen.id, **node_data))
         created += 1
     db.commit()

@@ -9,3 +9,7 @@ httpx
 aiomqtt
 websockets
 pyjwt
+oracledb
+pymysql
+pymongo
+cryptography
