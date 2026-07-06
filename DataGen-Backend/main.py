@@ -28,6 +28,7 @@ def run_migrations():
         "ALTER TABLE generators ADD COLUMN IF NOT EXISTS selected_db_id INTEGER",
         "ALTER TABLE apis ADD COLUMN IF NOT EXISTS user_id INTEGER",
         "ALTER TABLE mqtt_configs ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS faker_type VARCHAR",
         "ALTER TABLE apis ALTER COLUMN generator_id DROP NOT NULL",
         "ALTER TABLE mqtt_configs ALTER COLUMN generator_id DROP NOT NULL",
     ]
@@ -635,9 +636,38 @@ def _category_to_node(col_name: str, meta: dict) -> dict:
     elif cat == "datetime":
         node.update(data_type_enum="String", generation_mode="Timestamp")
     else:
-        maxlen = min(10, int(length)) if length else 10
-        node.update(data_type_enum="String", generation_mode="Random", min_range=1, max_range=maxlen)
+        # Guess a realistic Faker provider from the column name; fall back to random text.
+        faker = _guess_faker(col_name)
+        if faker:
+            node.update(data_type_enum="String", generation_mode="Faker", faker_type=faker)
+        else:
+            maxlen = min(10, int(length)) if length else 10
+            node.update(data_type_enum="String", generation_mode="Random", min_range=1, max_range=maxlen)
     return node
+
+
+# Heuristic: pick a Faker provider from a column name for realistic auto-generated data.
+def _guess_faker(col_name: str):
+    n = col_name.lower()
+    rules = [
+        ("email", "email"),
+        ("first_name", "first_name"), ("last_name", "last_name"),
+        ("username", "user_name"), ("user_name", "user_name"),
+        ("name", "name"),
+        ("phone", "phone_number"), ("mobile", "phone_number"),
+        ("street", "street_address"), ("address", "street_address"),
+        ("city", "city"), ("state", "state"), ("country", "country"),
+        ("zip", "postcode"), ("postal", "postcode"), ("postcode", "postcode"),
+        ("company", "company"), ("employer", "company"),
+        ("job", "job"), ("title", "job"),
+        ("ip", "ipv4"), ("mac", "mac_address"),
+        ("url", "url"), ("website", "url"), ("domain", "domain_name"),
+        ("color", "color_name"), ("currency", "currency_code"),
+    ]
+    for key, provider in rules:
+        if key in n:
+            return provider
+    return None
 
 
 @app.post("/databases/{db_id}/generate-generator")

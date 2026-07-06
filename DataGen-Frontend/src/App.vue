@@ -6,6 +6,7 @@
       </div>
 
       <div class="nav-container" v-if="isAuthed">
+        <router-link to="/dashboard">Dashboard</router-link>
         <router-link to="/generators">Generators</router-link>
         <router-link to="/api-config">API Config</router-link>
         <router-link to="/mqtt-config">MQTT Config</router-link>

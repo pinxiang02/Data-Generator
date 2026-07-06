@@ -3,6 +3,29 @@
 End-to-end test that the generator produces data and delivers it to both an
 HTTP API destination and an MQTT broker, using the two test clients.
 
+## Quick start — run the whole stack with Docker
+
+Everything (app + databases + MQTT) is defined in one compose file. From the
+`Docker/` directory:
+
+```powershell
+docker compose -f docker-compose-database.yml up -d --build
+```
+
+This brings up: **frontend** at http://localhost:8080, **backend** at
+http://localhost:8000, plus Postgres (5436), Mosquitto (1884), Oracle (1523),
+MySQL (3307) and MongoDB (27018). Open http://localhost:8080 and sign up.
+
+> When the backend runs in Docker, database-sink connection strings should use
+> the **service names** on the compose network (e.g. `mysql://datagen:datagen@mysql:3306/datagen`,
+> `oracle://datagen:datagen@oracle:1521/?service_name=FREEPDB1`,
+> `mongodb://datagen:datagen@mongodb:27017/datagen?authSource=admin`) rather than
+> `localhost`. The manual (non-Docker) steps below use the host ports instead.
+
+---
+
+## Manual run (for development)
+
 ## Components & ports
 
 | Service              | Location                          | Port  |

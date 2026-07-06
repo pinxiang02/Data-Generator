@@ -13,3 +13,4 @@ oracledb
 pymysql
 pymongo
 cryptography
+faker

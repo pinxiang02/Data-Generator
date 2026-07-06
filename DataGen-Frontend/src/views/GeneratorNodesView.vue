@@ -101,6 +101,7 @@
                   <option value="Sine">Sine Wave</option>
                   <option value="Timestamp">Timestamp</option>
                   <option value="UUID">UUID</option>
+                  <option value="Faker">Faker (realistic)</option>
                 </select>
               </div>
             </div>
@@ -148,6 +149,44 @@
 
             <div v-if="form.generation_mode === 'UUID'" class="mode-hint slide-down">
               Emits a fresh random UUID (v4) each tick.
+            </div>
+
+            <div v-if="form.generation_mode === 'Faker'" class="form-group slide-down">
+              <label>Faker Provider</label>
+              <select v-model="form.faker_type" class="apple-input">
+                <optgroup label="Person">
+                  <option value="name">Full name</option>
+                  <option value="first_name">First name</option>
+                  <option value="last_name">Last name</option>
+                  <option value="user_name">Username</option>
+                  <option value="email">Email</option>
+                  <option value="phone_number">Phone number</option>
+                  <option value="job">Job title</option>
+                </optgroup>
+                <optgroup label="Location">
+                  <option value="street_address">Street address</option>
+                  <option value="city">City</option>
+                  <option value="state">State</option>
+                  <option value="country">Country</option>
+                  <option value="country_code">Country code</option>
+                  <option value="postcode">Postcode</option>
+                  <option value="latitude">Latitude</option>
+                  <option value="longitude">Longitude</option>
+                </optgroup>
+                <optgroup label="Company / Internet">
+                  <option value="company">Company</option>
+                  <option value="ipv4">IPv4 address</option>
+                  <option value="mac_address">MAC address</option>
+                  <option value="url">URL</option>
+                  <option value="domain_name">Domain name</option>
+                </optgroup>
+                <optgroup label="Misc">
+                  <option value="sentence">Sentence</option>
+                  <option value="word">Word</option>
+                  <option value="color_name">Color name</option>
+                  <option value="currency_code">Currency code</option>
+                </optgroup>
+              </select>
             </div>
 
             <div class="form-actions">
@@ -227,7 +266,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import api, { auth } from '../services/api';
 
@@ -252,6 +291,12 @@ const livePayloads = ref([]); // PLURAL - Matches the template loop
 const liveResponses = ref([]);
 
 const form = ref({ node_name: '', data_type_enum: 'String', generation_mode: 'Fixed' });
+
+// Give Faker mode a sensible default provider so the dropdown is never empty.
+watch(() => form.value.generation_mode, (mode) => {
+  if (mode === 'Faker' && !form.value.faker_type) form.value.faker_type = 'name';
+});
+
 const payloadConsole = ref(null);
 const responseConsole = ref(null);
 let pollingTimer = null;

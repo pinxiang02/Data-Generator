@@ -60,7 +60,7 @@ const submit = async () => {
   try {
     const res = await api.signup(username.value.trim(), password.value);
     auth.set(res.data.access_token, res.data.username);
-    router.push('/generators');
+    router.push('/dashboard');
   } catch (e) {
     error.value = e.response?.data?.detail || 'Sign up failed. Please try again.';
   } finally {

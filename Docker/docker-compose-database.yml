@@ -1,26 +1,71 @@
-# Extra database engines for testing the DataGen database sink.
-# Ports are offset from the defaults to avoid clashing with other local containers.
+# All infrastructure for DataGen in one file: the app's primary Postgres,
+# the MQTT broker, and the extra database engines used by the database sink.
 #
-#   Oracle  -> localhost:1523  service FREEPDB1  (user: datagen / datagen)
-#   MySQL   -> localhost:3307   db datagen       (user: datagen / datagen)
-#   MongoDB -> localhost:27018  db datagen       (user: datagen / datagen)
+# Bring everything up:   docker compose -f docker-compose-database.yml up -d
+#
+#   Postgres (app DB) -> localhost:5436  db pinxiang_database (pinxiang/pinxiang)
+#   Mosquitto (MQTT)  -> localhost:1884
+#   Oracle Free       -> localhost:1523  service FREEPDB1     (datagen/datagen)
+#   MySQL             -> localhost:3307  db datagen           (datagen/datagen)
+#   MongoDB           -> localhost:27018 db datagen           (datagen/datagen)
+#
+# `name: docker` keeps the volume names (docker_*) stable so existing data is
+# reused after a rebuild.
+name: docker
+
 services:
+  # ---- Application database (backend metadata: users, generators, nodes, ...) ----
+  postgres:
+    # Pinned to 17: the existing data volume was initialized by PG 17 and is not
+    # readable by 18+. Pinning also prevents a future 'latest' bump from breaking it.
+    image: postgres:17
+    container_name: postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pinxiang
+      POSTGRES_PASSWORD: pinxiang
+      POSTGRES_DB: pinxiang_database
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pinxiang -d pinxiang_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---- MQTT broker (message-broker destination) ----
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt_broker
+    restart: unless-stopped
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  # ---- Extra database sinks ----
   oracle:
     image: gvenzl/oracle-free:slim-faststart
     container_name: datagen_oracle
+    restart: unless-stopped
     ports:
       - "1523:1521"
     environment:
-      ORACLE_PASSWORD: oracle          # SYS/SYSTEM password
-      APP_USER: datagen                # created in pluggable DB FREEPDB1
+      ORACLE_PASSWORD: oracle
+      APP_USER: datagen
       APP_USER_PASSWORD: datagen
     volumes:
       - oracle_data:/opt/oracle/oradata
-    restart: unless-stopped
 
   mysql:
     image: mysql:8
     container_name: datagen_mysql
+    restart: unless-stopped
     ports:
       - "3307:3306"
     environment:
@@ -30,11 +75,11 @@ services:
       MYSQL_PASSWORD: datagen
     volumes:
       - mysql_data:/var/lib/mysql
-    restart: unless-stopped
 
   mongodb:
     image: mongo:7
     container_name: datagen_mongodb
+    restart: unless-stopped
     ports:
       - "27018:27017"
     environment:
@@ -43,9 +88,35 @@ services:
       MONGO_INITDB_DATABASE: datagen
     volumes:
       - mongo_data:/data/db
+
+  # ---- Application ----
+  backend:
+    build: ../DataGen-Backend
+    image: datagen-backend
+    container_name: datagen_backend
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Reach the postgres service by name on the compose network (internal port 5432)
+      DATABASE_URL: postgresql+pg8000://pinxiang:pinxiang@postgres:5432/pinxiang_database
+      DATAGEN_SECRET_KEY: datagen-dev-secret-change-me
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ../DataGen-Frontend
+    image: datagen-frontend
+    container_name: datagen_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
 
 volumes:
+  postgres_data:
   oracle_data:
   mysql_data:
   mongo_data:

@@ -1,4 +1,5 @@
 import asyncio
+import decimal as _decimal
 import math
 import random
 import string
@@ -10,6 +11,26 @@ import models
 from datetime import datetime, timezone
 import transmitter
 from ws_manager import ws_manager
+from faker import Faker
+
+_faker = Faker()
+
+# Curated Faker providers exposed as generation options (must match the UI list).
+FAKER_PROVIDERS = {
+    "name", "first_name", "last_name", "email", "user_name", "phone_number",
+    "street_address", "city", "state", "country", "postcode",
+    "company", "job", "ipv4", "mac_address", "url", "domain_name",
+    "sentence", "word", "color_name", "currency_code", "country_code",
+    "latitude", "longitude",
+}
+
+
+def _faker_value(kind: str):
+    kind = kind if kind in FAKER_PROVIDERS else "name"
+    val = getattr(_faker, kind)()
+    if isinstance(val, _decimal.Decimal):
+        return float(val)
+    return str(val)
 
 # On Windows a redirected stdout defaults to cp1252, which cannot encode the
 # emoji used in the log lines below. A failed print must never kill a worker.
@@ -85,6 +106,9 @@ def generate_value(node: models.Node, state: dict = None):
 
         elif mode == "UUID":
             return str(uuid.uuid4())
+
+        elif mode == "Faker":
+            return _faker_value(getattr(node, "faker_type", None))
 
         return None
     except Exception as e:

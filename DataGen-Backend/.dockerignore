@@ -1,0 +1,6 @@
+# Local virtualenvs and caches — the image installs its own deps
+datagen/
+API/
+__pycache__/
+*.pyc
+.env

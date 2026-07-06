@@ -47,6 +47,7 @@ class Node(Base):
     value_list = Column(String, nullable=True)
     min_range = Column(Float, nullable=True)
     max_range = Column(Float, nullable=True)
+    faker_type = Column(String, nullable=True)  # provider name for the "Faker" mode
     
     generator = relationship("Generator", back_populates="nodes")
 

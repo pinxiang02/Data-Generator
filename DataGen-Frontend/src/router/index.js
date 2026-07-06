@@ -22,6 +22,12 @@ const routes = [
     meta: { title: 'Home - DataGen' },
   },
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('../views/DashboardView.vue'),
+    meta: { title: 'Dashboard - DataGen' },
+  },
+  {
     path: '/generators',
     name: 'Generators',
     component: () => import('../views/GeneratorsView.vue'),
@@ -68,7 +74,7 @@ router.beforeEach((to, from, next) => {
   }
   // Logged-in users shouldn't sit on the login/signup pages.
   if (to.meta.public && auth.isAuthenticated) {
-    return next({ name: 'Generators' });
+    return next({ name: 'Dashboard' });
   }
   next();
 });

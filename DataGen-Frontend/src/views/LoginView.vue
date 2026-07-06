@@ -48,7 +48,7 @@ const submit = async () => {
   try {
     const res = await api.login(username.value.trim(), password.value);
     auth.set(res.data.access_token, res.data.username);
-    router.push(route.query.redirect || '/generators');
+    router.push(route.query.redirect || '/dashboard');
   } catch (e) {
     error.value = e.response?.data?.detail || 'Login failed. Please try again.';
   } finally {
