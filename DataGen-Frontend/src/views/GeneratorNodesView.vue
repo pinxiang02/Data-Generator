@@ -268,7 +268,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
-import api, { auth } from '../services/api';
+import api, { auth, API_BASE } from '../services/api';
 
 const isEditingNode = ref(false);
 const isApiEnabled = ref(false);
@@ -331,7 +331,8 @@ const handleTelemetry = (d) => {
 // Primary transport: stream telemetry over the authenticated WebSocket.
 const connectWs = () => {
   try {
-    ws = new WebSocket(`ws://127.0.0.1:8000/ws/generators/${id}?token=${encodeURIComponent(auth.token || '')}`);
+    const wsBase = API_BASE.replace(/^http/, 'ws');   // http->ws, https->wss
+    ws = new WebSocket(`${wsBase}/ws/generators/${id}?token=${encodeURIComponent(auth.token || '')}`);
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);

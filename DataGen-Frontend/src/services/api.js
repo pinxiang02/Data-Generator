@@ -18,8 +18,12 @@ export const auth = {
   },
 };
 
+// Backend base URL. Defaults to :8000 for local dev; the Docker image is built
+// with VITE_API_URL=http://127.0.0.1:8001 so the browser hits the published port.
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
 
